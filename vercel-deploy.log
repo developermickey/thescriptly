@@ -1,0 +1,43 @@
+Vercel CLI 54.14.0 (Node.js 25.2.1)
+Retrieving project…
+Deploying mukeshpathak345-gmailcoms-projects/kodecompiler
+Uploading [--------------------] (0.0B/116B)
+Uploading [====================] (116.0B/116B)
+  Inspect     https://vercel.com/mukeshpathak345-gmailcoms-projects/kodecompiler/6Xibquo2mGSg49ZqRJmgkQMsisrr
+▲ Production  https://kodecompiler-lh70x6cxe-mukeshpathak345-gmailcoms-projects.vercel.app
+https://kodecompiler-lh70x6cxe-mukeshpathak345-gmailcoms-projects.vercel.appBuilding…
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Previous build caches not available.
+Downloading 218 deployment files...
+Running "vercel build"
+Vercel CLI 54.14.0
+Installing dependencies...
+npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
+added 431 packages in 16s
+158 packages are looking for funding
+run `npm fund` for details
+Running "npm run build"
+> codex-v2@0.1.0 build
+> prisma generate && next build
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 307ms
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+Tip: Curious about the SQL queries Prisma ORM generates? Optimize helps you enhance your visibility: https://pris.ly/tip-2-optimize
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+▲ Next.js 16.2.9 (Turbopack)
+- Environments: .env
+Creating an optimized production build ...
+✓ Compiled successfully in 13.0s
+Running TypeScript ...
+Finished TypeScript in 11.7s ...
+Collecting page data using 1 worker ...
+Generating static pages using 1 worker (0/82) ...
+Generating static pages using 1 worker (20/82)
+Error: Command "npm run build" exited with 1
