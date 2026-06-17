@@ -21,9 +21,13 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify HMAC-SHA256 signature
+  if (!process.env.RAZORPAY_KEY_SECRET) {
+    return NextResponse.json({ error: 'Payment service not configured' }, { status: 503 })
+  }
+
   const bodyStr  = razorpay_order_id + '|' + razorpay_payment_id
   const expected = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
     .update(bodyStr)
     .digest('hex')
 

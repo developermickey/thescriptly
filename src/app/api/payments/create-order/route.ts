@@ -4,15 +4,21 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import Razorpay from 'razorpay'
 
-const razorpay = new Razorpay({
-  key_id:     process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-})
+const razorpay = (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
+  ? new Razorpay({
+      key_id:     process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    })
+  : null
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const userId = parseInt((session.user as any).id)
+
+  if (!razorpay) {
+    return NextResponse.json({ error: 'Payment service not configured' }, { status: 503 })
+  }
 
   const { courseId } = await req.json()
   if (!courseId) return NextResponse.json({ error: 'courseId required' }, { status: 400 })
