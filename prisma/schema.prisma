@@ -1,0 +1,512 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  avatar       String?
+  bio          String?  @db.Text
+  github       String?
+  twitter      String?
+  website      String?
+  role              String?  @default("student")
+  createdAt         DateTime @default(now()) @map("created_at")
+  referralCode      String?  @map("referral_code")
+  referredBy        Int?     @map("referred_by")
+  resetToken        String?  @map("reset_token")
+  resetTokenExpiry  DateTime? @map("reset_token_expiry")
+  currentStreak     Int      @default(0) @map("current_streak")
+  longestStreak     Int      @default(0) @map("longest_streak")
+  lastStreakDate    DateTime? @map("last_streak_date")
+  emailDigest       Boolean  @default(true) @map("email_digest")
+  onboardedAt       DateTime? @map("onboarded_at")
+  skillLevel        String?  @map("skill_level")   // 'beginner' | 'intermediate' | 'advanced'
+  learningGoal      String?  @map("learning_goal") // 'interviews' | 'courses' | 'practice' | 'fun'
+  streakFreezes     Int      @default(1) @map("streak_freezes")
+  lastFreezeUsed    DateTime? @map("last_freeze_used")
+
+  enrollments       Enrollment[]
+  lessonProgress    LessonProgress[]
+  submissions       Submission[]
+  certificates      Certificate[]
+  bookmarks         ProblemBookmark[]
+  comments          ProblemComment[]
+  drafts            CodeDraft[]
+  lessonDiscussions LessonDiscussion[]
+  badges            UserBadge[]
+  lessonNotes       LessonNote[]
+  problemNotes      ProblemNote[]
+  notifications     Notification[] @relation("NotificationUser")
+  interviewSessions InterviewSession[]
+  courseRatings     CourseRating[]
+  commentLikes      CommentLike[]
+  difficultyVotes   DifficultyVote[]
+  sharedSolutions   SharedSolution[]
+  problemReports    ProblemReport[]
+  userLists         UserList[]
+  userListItems     UserListItem[]
+
+  @@map("users")
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  @db.Text
+  category    String?
+  badge       String?
+  icon        String?
+  totalClasses Int     @default(0) @map("total_classes")
+  price       Decimal? @db.Decimal(10, 2)
+  mrp         Decimal  @default(0) @db.Decimal(10, 2)
+  isFree      Boolean  @default(false) @map("is_free")
+  whatYouLearn String? @db.Text @map("what_you_learn")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  modules      Module[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+  ratings      CourseRating[]
+
+  @@map("courses")
+}
+
+model Module {
+  id          Int     @id @default(autoincrement())
+  courseId    Int     @map("course_id")
+  title       String
+  description String? @db.Text
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  course  Course   @relation(fields: [courseId], references: [id])
+  lessons Lesson[]
+
+  @@map("modules")
+}
+
+model Lesson {
+  id          Int     @id @default(autoincrement())
+  moduleId    Int     @map("module_id")
+  title       String
+  description String? @db.Text
+  content     String? @db.LongText
+  videoUrl    String? @map("video_url") @db.VarChar(500)
+  type        String  @default("reading")
+  duration    Int?    @map("duration_min")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  module      Module             @relation(fields: [moduleId], references: [id])
+  progress    LessonProgress[]
+  discussions LessonDiscussion[]
+  notes       LessonNote[]
+  quizQuestions QuizQuestion[]
+
+  @@map("lessons")
+}
+
+model Enrollment {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  courseId   Int      @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  paymentId  String?  @map("payment_id")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model QuizQuestion {
+  id            Int      @id @default(autoincrement())
+  lessonId      Int      @map("lesson_id")
+  question      String   @db.Text
+  options       Json
+  correctAnswer Int      @map("correct_answer")
+  explanation   String?  @db.Text
+  sortOrder     Int      @default(0) @map("sort_order")
+  difficulty    String   @default("Medium")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+model LessonProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  lessonId    Int      @map("lesson_id")
+  completedAt DateTime @default(now()) @map("completed_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+model PracticeQuestion {
+  id                  Int     @id @default(autoincrement())
+  lessonId            Int?    @map("lesson_id")
+  title               String
+  difficulty          String  @default("Medium")
+  topic               String?
+  company             String?
+  problemStatement    String? @db.LongText @map("problem_statement")
+  examples            String? @db.LongText
+  constraints         String? @db.LongText
+  hints               String? @db.LongText
+  solutionExplanation String? @db.LongText @map("solution_explanation")
+  starterCodeJs       String? @db.Text @map("starter_code_js")
+  starterCodePython   String? @db.Text @map("starter_code_python")
+  starterCodeJava     String? @db.Text @map("starter_code_java")
+  starterCodeCpp      String? @db.Text @map("starter_code_cpp")
+  timeComplexity      String? @map("time_complexity")
+  spaceComplexity     String? @map("space_complexity")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  submissions       Submission[]
+  bookmarks         ProblemBookmark[]
+  comments          ProblemComment[]
+  interviewSessions InterviewSession[]
+  collectionItems   CollectionItem[]
+  problemHints      ProblemHint[]
+  difficultyVotes   DifficultyVote[]
+  sharedSolutions   SharedSolution[]
+  reports           ProblemReport[]
+  dailyPins         DailyPin[]
+  problemNotes      ProblemNote[]
+  userListItems     UserListItem[]
+
+  @@map("practice_questions")
+}
+
+model Submission {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  questionId Int      @map("question_id")
+  language   String
+  code       String   @db.LongText
+  status     String   @default("pending")
+  results    Json?
+  runtimeMs  Int?     @map("runtime_ms")
+  memoryMb   Int?     @map("memory_mb")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User             @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [questionId], references: [id])
+
+  @@map("submissions")
+}
+
+model Certificate {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  courseId        Int       @map("course_id")
+  certificateCode String?   @unique @map("certificate_code")
+  completionDate  DateTime? @map("completion_date")
+  score           Int?
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@map("certificates")
+}
+
+model ProblemBookmark {
+  id           Int      @id @default(autoincrement())
+  problemId    Int      @map("problem_id")
+  userId       Int      @map("user_id")
+  bookmarkedAt DateTime @default(now()) @map("bookmarked_at")
+
+  user     User             @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [problemId], references: [id])
+
+  @@unique([userId, problemId])
+  @@map("problem_bookmarks")
+}
+
+model ProblemComment {
+  id         Int      @id @default(autoincrement())
+  questionId Int      @map("question_id")
+  userId     Int      @map("user_id")
+  parentId   Int?     @map("parent_id")
+  body       String   @db.Text
+  likes      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user     User             @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [questionId], references: [id])
+  parent   ProblemComment?  @relation("Replies", fields: [parentId], references: [id])
+  replies  ProblemComment[] @relation("Replies")
+  likedBy  CommentLike[]
+
+  @@map("problem_comments")
+}
+
+model CodeDraft {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  challengeId Int      @map("challenge_id")
+  language    String   @default("javascript")
+  code        String   @db.LongText
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, challengeId, language])
+  @@map("code_drafts")
+}
+
+model LessonDiscussion {
+  id        Int      @id @default(autoincrement())
+  lessonId  Int      @map("lesson_id")
+  userId    Int      @map("user_id")
+  parentId  Int?     @map("parent_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User              @relation(fields: [userId], references: [id])
+  lesson  Lesson            @relation(fields: [lessonId], references: [id])
+  parent  LessonDiscussion? @relation("LessonReplies", fields: [parentId], references: [id])
+  replies LessonDiscussion[] @relation("LessonReplies")
+
+  @@map("discussions")
+}
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  actorId     Int       @map("actor_id")
+  type        String    @default("system")
+  contentId   Int?      @map("content_id")
+  contentType String?   @map("content_type")
+  message     String?   @db.VarChar(255)
+  readAt      DateTime? @map("read_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation("NotificationUser",  fields: [userId],  references: [id])
+
+  @@map("notifications")
+}
+
+model LessonNote {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  lessonId  Int      @map("lesson_id")
+  content   String?  @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  lesson Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+  @@map("lesson_notes")
+}
+
+model UserList {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  name        String
+  description String?  @db.Text
+  isPublic    Boolean  @default(false) @map("is_public")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items UserListItem[]
+
+  @@map("user_lists")
+}
+
+model UserListItem {
+  id         Int      @id @default(autoincrement())
+  listId     Int      @map("list_id")
+  userId     Int      @map("user_id")
+  questionId Int      @map("question_id")
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  list     UserList         @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, questionId])
+  @@map("user_list_items")
+}
+
+model ProblemNote {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  questionId Int      @map("question_id")
+  content    String?  @db.Text
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user     User            @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@map("problem_notes")
+}
+
+model InterviewSession {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  questionId   Int      @map("question_id")
+  difficulty   String
+  language     String
+  durationSecs Int      @map("duration_secs")
+  elapsedSecs  Int      @map("elapsed_secs")
+  solved       Boolean  @default(false)
+  score        Int      @default(0)
+  grade        String   @default("")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user     User             @relation(fields: [userId], references: [id])
+  question PracticeQuestion @relation(fields: [questionId], references: [id])
+
+  @@map("interview_sessions")
+}
+
+model ProblemCollection {
+  id          Int      @id @default(autoincrement())
+  slug        String   @unique
+  title       String
+  description String?  @db.Text
+  icon        String?
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  items CollectionItem[]
+
+  @@map("problem_collections")
+}
+
+model CollectionItem {
+  id           Int @id @default(autoincrement())
+  collectionId Int @map("collection_id")
+  questionId   Int @map("question_id")
+  sortOrder    Int @default(0) @map("sort_order")
+
+  collection ProblemCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  question   PracticeQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, questionId])
+  @@map("collection_items")
+}
+
+model CourseRating {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  courseId  Int      @map("course_id")
+  rating    Int
+  review    String?  @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  course Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@map("course_ratings")
+}
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  badgeSlug String   @map("badge_slug")
+  badgeName String   @map("badge_name")
+  badgeDesc String   @map("badge_desc")
+  awardedAt DateTime @map("awarded_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_badges")
+}
+
+model ProblemHint {
+  id         Int      @id @default(autoincrement())
+  questionId Int      @map("question_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  body       String   @db.Text
+
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("problem_hints")
+}
+
+model SharedSolution {
+  id         Int      @id @default(autoincrement())
+  questionId Int      @map("question_id")
+  userId     Int      @map("user_id")
+  language   String
+  code       String   @db.LongText
+  title      String   @default("")
+  upvotes    Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  question   PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id])
+
+  @@map("shared_solutions")
+}
+
+model DifficultyVote {
+  id         Int    @id @default(autoincrement())
+  questionId Int    @map("question_id")
+  userId     Int    @map("user_id")
+  vote       String // 'Easy' | 'Medium' | 'Hard'
+
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id])
+
+  @@unique([questionId, userId])
+  @@map("difficulty_votes")
+}
+
+model CommentLike {
+  id        Int @id @default(autoincrement())
+  commentId Int @map("comment_id")
+  userId    Int @map("user_id")
+
+  comment ProblemComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id])
+
+  @@unique([commentId, userId])
+  @@map("comment_likes")
+}
+
+model DailyPin {
+  id         Int      @id @default(autoincrement())
+  date       String   @unique // YYYY-MM-DD
+  questionId Int      @map("question_id")
+  pinnedAt   DateTime @default(now()) @map("pinned_at")
+
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@map("daily_pins")
+}
+
+model ProblemReport {
+  id         Int      @id @default(autoincrement())
+  questionId Int      @map("question_id")
+  userId     Int      @map("user_id")
+  type       String   // 'wrong_answer' | 'typo' | 'broken_test' | 'other'
+  body       String   @db.Text
+  status     String   @default("open") // 'open' | 'resolved' | 'dismissed'
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  question PracticeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id])
+
+  @@map("problem_reports")
+}
